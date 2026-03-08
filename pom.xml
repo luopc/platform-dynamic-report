@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.luopc.platform.report</groupId>
+    <artifactId>platform-dynamic-report</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Platform Dynamic Report</name>
+    <description>Spring Boot 集成 ActiveMQ、MyBatis-Flex、Redis、MongoDB、Low-Code 表单引擎</description>
+    <parent>
+        <groupId>com.luopc.platform.parent</groupId>
+        <artifactId>platform-boot-3.5</artifactId>
+        <version>2.10.12</version>
+    </parent>
+    <modules>
+        <module>dynamic-report-server</module>
+    </modules>
+    <properties>
+        <activemq.version>6.2.0</activemq.version>
+        <mybatis-flex.version>1.11.6</mybatis-flex.version>
+        <spring.redisson.version>3.26.0</spring.redisson.version>
+        <java.version>21</java.version>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-json</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
+            <!-- 2. MyBatis + MyBatis-Flex 依赖 -->
+            <dependency>
+                <groupId>com.mybatis-flex</groupId>
+                <artifactId>mybatis-flex-spring-boot-starter</artifactId>
+                <version>${mybatis-flex.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis.spring-boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.luopc.platform.client</groupId>
+                <artifactId>redis-client</artifactId>
+                <version>1.0.10</version>
+            </dependency>
+            <dependency>
+                <groupId>com.luopc.platform.client</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>1.0.10</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.luopc.platform.boot</groupId>
+                <artifactId>common-web</artifactId>
+                <version>1.2.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.luopc.platform.boot</groupId>
+                <artifactId>common-data</artifactId>
+                <version>1.2.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.luopc.platform.boot</groupId>
+                <artifactId>common-test</artifactId>
+                <version>1.2.5</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <scm>
+        <url>https://gitee.com/luo_pc/platform-dynamic-report/</url>
+        <connection>scm:git:git@gitee.com:luo_pc/platform-dynamic-report.git</connection>
+        <developerConnection>scm:git:git@gitee.com:luo_pc/platform-dynamic-report.git</developerConnection>
+    </scm>
+</project>
