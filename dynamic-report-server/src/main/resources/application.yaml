@@ -1,7 +1,7 @@
 server:
-  port: 0
-  servlet:
-    context-path: /drs
+  port: 5541
+#  servlet:
+#    context-path: /drs
 
 platform:
   resilience:
@@ -13,7 +13,7 @@ spring:
     version: '@project.version@'
   profiles:
     active: '@profiles.active@'
-    include: core,web,mysql,redis
+    include: core,web,nacos,mysql,redis
 
 mybatis-flex:
   mapper-locations: classpath:mapper/**/*.xml

@@ -63,6 +63,11 @@
                 <version>1.0.10</version>
             </dependency>
             <dependency>
+                <groupId>com.luopc.platform.client</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>1.0.10</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
