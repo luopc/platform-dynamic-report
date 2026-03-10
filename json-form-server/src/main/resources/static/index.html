@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>动态表单生成</title>
+    <!-- 引入JSON Editor依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+    <!-- Bootstrap样式（可选） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
+</head>
+<body class="container mt-5">
+<h1>动态表单生成</h1>
+<div class="form-group">
+    <label for="schemaId">Schema ID：</label>
+    <input type="text" id="schemaId" class="form-control" value="userForm" placeholder="输入Schema ID">
+    <button id="loadSchema" class="btn btn-primary mt-2">加载表单</button>
+</div>
+
+<!-- 表单容器 -->
+<div id="editorHolder" class="mt-4"></div>
+
+<!-- 提交按钮 -->
+<button id="submitForm" class="btn btn-success mt-4">提交表单</button>
+<!-- 验证结果 -->
+<div id="result" class="mt-4"></div>
+
+<script>
+    let editor = null;
+
+    // 加载Schema并生成表单
+    document.getElementById('loadSchema').addEventListener('click', async () => {
+        const schemaId = document.getElementById('schemaId').value.trim();
+        if (!schemaId) {
+            alert('请输入Schema ID');
+            return;
+        }
+
+        try {
+            // 调用后端接口获取Schema
+            const response = await fetch(`/forms/${schemaId}/config`);
+            if (!response.ok) throw new Error('Schema加载失败');
+
+            const schema = await response.json();
+            // 初始化JSON Editor
+            if (editor) editor.destroy();
+            editor = new JSONEditor(document.getElementById('editorHolder'), {
+                schema: schema,
+                theme: 'bootstrap4',
+                iconlib: 'fontawesome5',
+                show_errors: 'always'
+            });
+            alert('表单加载成功');
+        } catch (e) {
+            alert('加载失败：' + e.message);
+        }
+    });
+
+    // 提交表单
+    document.getElementById('submitForm').addEventListener('click', async () => {
+        if (!editor) {
+            alert('请先加载表单');
+            return;
+        }
+
+        const schemaId = document.getElementById('schemaId').value.trim();
+        const formData = editor.getValue();
+        const submitter = 'test_user'; // 模拟提交人
+
+        try {
+            // 调用后端提交接口
+            const response = await fetch(`/forms/${schemaId}/submit?submitter=${submitter}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            const resultEl = document.getElementById('result');
+            if (result.validateResult) {
+                resultEl.innerHTML = `<div class="alert alert-success">提交成功！ID：${result.id}</div>`;
+            } else {
+                resultEl.innerHTML = `<div class="alert alert-danger">提交失败：${result.validateError}</div>`;
+            }
+        } catch (e) {
+            alert('提交失败：' + e.message);
+        }
+    });
+</script>
+</body>
+</html>

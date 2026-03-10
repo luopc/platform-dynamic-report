@@ -1,0 +1,32 @@
+#spring:
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://data.luopc.com:3306/pb_main_all_dev?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+#    username: admin
+#    password: db_admin@123
+
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:h2:mem:formdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  # H2控制台配置
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  # JPA配置
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  # 资源配置
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/

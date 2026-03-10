@@ -15,6 +15,7 @@
     </parent>
     <modules>
         <module>dynamic-report-server</module>
+        <module>json-form-server</module>
     </modules>
     <properties>
         <activemq.version>6.2.0</activemq.version>

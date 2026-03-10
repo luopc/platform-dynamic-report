@@ -7,6 +7,8 @@ import com.luopc.platform.web.report.model.*;
 import com.luopc.platform.web.report.service.FormSchemaService;
 import com.luopc.platform.web.report.service.FormSubmissionService;
 import com.luopc.platform.web.report.service.JsonSchemaValidator;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -311,25 +313,12 @@ public class DynamicFormController {
     /**
      * 字段验证请求
      */
+    @Setter
+    @Getter
     public static class FieldValidationRequest {
         private String fieldName;
         private JsonNode fieldValue;
 
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        public void setFieldName(String fieldName) {
-            this.fieldName = fieldName;
-        }
-
-        public JsonNode getFieldValue() {
-            return fieldValue;
-        }
-
-        public void setFieldValue(JsonNode fieldValue) {
-            this.fieldValue = fieldValue;
-        }
     }
 
     /**
@@ -348,52 +337,15 @@ public class DynamicFormController {
     /**
      * 创建Schema请求
      */
+    @Setter
+    @Getter
     public static class CreateSchemaRequest {
+        // Getters and Setters
         private String schemaId;
         private String name;
         private String description;
         private String schemaDefinition;
         private String category;
 
-        // Getters and Setters
-        public String getSchemaId() {
-            return schemaId;
-        }
-
-        public void setSchemaId(String schemaId) {
-            this.schemaId = schemaId;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
-        public String getSchemaDefinition() {
-            return schemaDefinition;
-        }
-
-        public void setSchemaDefinition(String schemaDefinition) {
-            this.schemaDefinition = schemaDefinition;
-        }
-
-        public String getCategory() {
-            return category;
-        }
-
-        public void setCategory(String category) {
-            this.category = category;
-        }
     }
 }

@@ -36,7 +36,7 @@ public class FormSubmissionService {
         // 保存到存储
         submissionStore.computeIfAbsent(schemaId, k -> new ArrayList<>()).add(submission);
 
-        log.info("Saved submission for schema: {}, submission ID: {}", schemaId, submission.getId());
+        log.info("Saved submission for schema: {}, submission ID: {}, content: {}", schemaId, submission.getId(), submission);
         return submission;
     }
 

@@ -1,16 +1,14 @@
 package com.luopc.platform.web.report.service;
 
-import com.luopc.platform.web.report.model.ValidationResult;
-import com.luopc.platform.web.report.model.ValidationError;
-import com.luopc.platform.web.report.model.FormSchema;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.luopc.platform.web.report.model.FormSchema;
+import com.luopc.platform.web.report.model.ValidationError;
+import com.luopc.platform.web.report.model.ValidationResult;
+import com.networknt.schema.*;
+import com.networknt.schema.Error;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,13 +24,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JsonSchemaValidator {
 
     private final ObjectMapper objectMapper;
-    private final Map<String, JsonSchema> schemaCache = new ConcurrentHashMap<>();
+    private final Map<String, Schema> schemaCache = new ConcurrentHashMap<>();
     private final FormSchemaService schemaService;
+    private final SchemaRegistry schemaRegistry;
 
     @Autowired
     public JsonSchemaValidator(ObjectMapper objectMapper, FormSchemaService schemaService) {
         this.objectMapper = objectMapper;
         this.schemaService = schemaService;
+
+        // 2. 配置 SchemaRegistry（绑定自定义 Dialect + 启用格式断言）
+        SchemaRegistryConfig registryConfig = SchemaRegistryConfig.builder()
+                .formatAssertionsEnabled(true)  // 全局启用 format 校验（Draft 2019-09+ 必需）
+                .failFast(false)                // 可选：是否快速失败（false 返回所有错误）
+                .build();
+        this.schemaRegistry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12, builder ->
+                builder.schemaRegistryConfig(registryConfig)
+        );
     }
 
     /**
@@ -51,34 +59,48 @@ public class JsonSchemaValidator {
             // 过滤掉空的可选字段，只保留有值的字段和必填字段
             ObjectNode filteredData = filterOptionalFields(data, schemaNode);
 
-            JsonSchema schema = getSchema(schemaId);
-            Set<ValidationMessage> validationMessages = schema.validate(filteredData);
+            Schema schema = getSchema(schemaId);
+//            JsonSchema schema = getSchema(schemaNode);
+            List<Error> validationMessages = schema.validate(filteredData);
 
             if (validationMessages.isEmpty()) {
                 return ValidationResult.success();
             }
 
             List<ValidationError> errors = new ArrayList<>();
-            for (ValidationMessage msg : validationMessages) {
+            for (Error msg : validationMessages) {
                 // 过滤掉由于可选字段为空导致的验证错误
-                String path = msg.getPath();
-                String fieldName = extractFieldName(path);
+//                String path = msg.getPath();
+                String path = msg.getSchemaLocation().toString();
+                String fieldName = extractFieldName(msg.getInstanceLocation().toString());
 
                 if (isEmptyOptionalFieldError(fieldName, data, schemaNode)) {
                     continue; // 跳过空的可选字段错误
                 }
-
+                log.info("ValidationError, MessageKey: {}," +
+                                "keyWord:{}, Message:{}, property:{}, instanceNode:{}, " +
+                                "InstanceLocation:{}, EvaluationPath: {}, SchemaLocation:{}, Arguments:{}, Details:{}",
+                        msg.getMessageKey(),
+                        msg.getKeyword(),
+                        msg.getMessage(),
+                        msg.getProperty(),
+                        msg.getInstanceNode(),
+                        msg.getInstanceLocation(),
+                        msg.getEvaluationPath(),
+                        msg.getSchemaLocation(),
+                        msg.getArguments(),
+                        msg.getDetails());
                 errors.add(ValidationError.builder()
-                    .field(path)
-                    .message(msg.getMessage())
-                    .code(msg.getType())
-                    .build());
+                        .field(path)
+                        .message(msg.getMessage())
+                        .code(msg.getKeyword())
+                        .build());
             }
 
             return ValidationResult.builder()
-                .valid(errors.isEmpty())
-                .errors(errors)
-                .build();
+                    .valid(errors.isEmpty())
+                    .errors(errors)
+                    .build();
 
         } catch (Exception e) {
             log.error("Schema validation failed for schemaId: {}", schemaId, e);
@@ -187,12 +209,16 @@ public class JsonSchemaValidator {
      * 从路径中提取字段名
      */
     private String extractFieldName(String path) {
+        log.info("extractFieldName from : {}", path);
         if (path.startsWith("$.") || path.startsWith("/")) {
             path = path.substring(2);
         }
         return path.split("\\.")[0].split("/")[0];
     }
 
+    /**
+     * 检查是否是空的可选字段错误
+     */
     /**
      * 检查是否是空的可选字段错误
      */
@@ -226,9 +252,15 @@ public class JsonSchemaValidator {
             JsonNode parentValue = originalData.get(parentField);
             if (parentValue != null && parentValue.isObject()) {
                 JsonNode childValue = parentValue.get(childField);
-                return isEmptyValue(childValue);
+                // 如果子字段不存在或为空，则是空可选字段错误
+                return childValue == null || isEmptyValue(childValue);
             }
             return true; // 父对象不存在或为空
+        }
+
+        // 检查字段在原数据中是否存在
+        if (!originalData.has(fieldName)) {
+            return false; // 字段不存在，可能是必填字段缺失，不要过滤
         }
 
         // 检查字段在原数据中是否为空
@@ -266,37 +298,47 @@ public class JsonSchemaValidator {
             data.set("field", fieldValue);
 
             // 使用字段专用的 schema 进行验证
-            JsonSchema jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
-                .getSchema(fieldSchema);
+            Schema jsonSchema = schemaRegistry.getSchema(fieldSchema);
 
-            Set<ValidationMessage> validationMessages = jsonSchema.validate(data);
+            List<Error> validationMessages = jsonSchema.validate(data);
 
             if (validationMessages.isEmpty()) {
                 return ValidationResult.success();
             }
 
             List<ValidationError> errors = new ArrayList<>();
-            for (ValidationMessage msg : validationMessages) {
+            for (Error msg : validationMessages) {
                 // 将路径中的 "field" 替换为实际的字段名
-                String path = msg.getPath().replace("$.field", "$." + fieldName);
+                String path = msg.getSchemaLocation().toString();
+//                String path = msg.getPath().replace("$.field", "$." + fieldName);
                 String message = msg.getMessage();
 
                 // 特殊处理邮箱格式错误，简化错误信息
                 if (message.contains("email") || message.contains("RFC 5321")) {
                     message = "邮箱格式不正确";
                 }
-
+                log.info("ValidationError, " +
+                                "keyWord:{}, Message:{}, property:{}, instanceNode:{}, " +
+                                "InstanceLocation:{}, EvaluationPath: {}, SchemaLocation:{}, Arguments:{}, Details:{}", msg.getKeyword(),
+                        msg.getMessage(),
+                        msg.getProperty(),
+                        msg.getInstanceNode(),
+                        msg.getInstanceLocation(),
+                        msg.getEvaluationPath(),
+                        msg.getSchemaLocation(),
+                        msg.getArguments(),
+                        msg.getDetails());
                 errors.add(ValidationError.builder()
-                    .field(path)
-                    .message(message)
-                    .code(msg.getType())
-                    .build());
+                        .field(path)
+                        .message(message)
+                        .code(msg.getKeyword())
+                        .build());
             }
 
             return ValidationResult.builder()
-                .valid(false)
-                .errors(errors)
-                .build();
+                    .valid(false)
+                    .errors(errors)
+                    .build();
 
         } catch (Exception e) {
             log.error("Field validation failed for schemaId: {}, field: {}", schemaId, fieldName, e);
@@ -353,10 +395,15 @@ public class JsonSchemaValidator {
         return current.has(finalFieldName) ? current.get(finalFieldName) : null;
     }
 
+    private Schema getSchema(JsonNode schemaNode) throws Exception {
+        // 直接使用 schemaNode 创建 JsonSchema，不再依赖 schemaId 缓存
+        return schemaRegistry.getSchema(schemaNode);
+    }
+
     /**
      * 获取缓存的JsonSchema
      */
-    private JsonSchema getSchema(String schemaId) throws Exception {
+    private Schema getSchema(String schemaId) throws Exception {
         return schemaCache.computeIfAbsent(schemaId, k -> {
             try {
                 FormSchema formSchema = schemaService.getSchema(k);
@@ -365,8 +412,7 @@ public class JsonSchemaValidator {
                 }
 
                 JsonNode schemaNode = objectMapper.readTree(formSchema.getSchemaDefinition());
-                return JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
-                    .getSchema(schemaNode);
+                return schemaRegistry.getSchema(schemaNode);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse schema", e);
             }

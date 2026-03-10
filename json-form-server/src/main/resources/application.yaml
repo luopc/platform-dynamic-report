@@ -1,0 +1,36 @@
+server:
+  port: 5542
+#  servlet:
+#    context-path: /drs
+
+platform:
+  resilience:
+    isHotWarmModel: false
+
+# 自定义配置：Schema文件存储路径
+form:
+  schema:
+    path: classpath:/schema/
+
+spring:
+  application:
+    name: dynamic-report-service
+    version: '@project.version@'
+  profiles:
+    active: '@profiles.active@'
+    include: core,web,nacos,mysql,redis
+
+mybatis-flex:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.luopc.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.luopc: debug
+    org.mybatis: debug
+    org.springframework.data.mongodb: debug
+

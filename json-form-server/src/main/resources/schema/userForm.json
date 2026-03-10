@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "用户表单",
+  "type": "object",
+  "required": ["name", "email", "age"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "姓名",
+      "minLength": 2,
+      "maxLength": 20
+    },
+    "email": {
+      "type": "string",
+      "title": "邮箱",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "title": "年龄",
+      "minimum": 18,
+      "maximum": 100
+    },
+    "phone": {
+      "type": "string",
+      "title": "手机号",
+      "pattern": "^1[3-9]\\d{9}$"
+    },
+    "address": {
+      "type": "object",
+      "title": "地址",
+      "properties": {
+        "province": {
+          "type": "string",
+          "title": "省份"
+        },
+        "city": {
+          "type": "string",
+          "title": "城市"
+        }
+      }
+    }
+  }
+}
