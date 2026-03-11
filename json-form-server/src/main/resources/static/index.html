@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>动态表单生成</title>
-    <!-- 引入JSON Editor依赖 -->
-    <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
-    <!-- Bootstrap样式（可选） -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
+    <script src="js/jsoneditor.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/all.css">
 </head>
 <body class="container mt-5">
 <h1>动态表单生成</h1>
@@ -16,15 +14,12 @@
     <input type="text" id="schemaId" class="form-control" value="userForm" placeholder="输入Schema ID">
     <button id="loadSchema" class="btn btn-primary mt-2">加载表单</button>
 </div>
-
 <!-- 表单容器 -->
 <div id="editorHolder" class="mt-4"></div>
-
 <!-- 提交按钮 -->
 <button id="submitForm" class="btn btn-success mt-4">提交表单</button>
 <!-- 验证结果 -->
 <div id="result" class="mt-4"></div>
-
 <script>
     let editor = null;
 
@@ -71,7 +66,7 @@
             // 调用后端提交接口
             const response = await fetch(`/forms/${schemaId}/submit?submitter=${submitter}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData)
             });
 
